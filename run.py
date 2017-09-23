@@ -30,7 +30,3 @@ print(fr.tail())
 print(fr.xs(0,level="AgentID"))
 plt.show()
 
-
-##hi
-##bye
-##tits
