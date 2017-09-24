@@ -37,9 +37,10 @@ class SchelModel(Model):
             agent_reporters={"coordinates":lambda j:j.pos,
                              "race":lambda j:j.race}
         )
+        self.datacollector.collect(self)
+
 
     def step(self):
-        self.datacollector.collect(self)
         self.meanratiosum = 0
         self.meanratio = 0
         self.lowestratio = 1
@@ -48,6 +49,8 @@ class SchelModel(Model):
         if(self.reached_equilibrium == True):
             self.running = False
         self.meanratio = self.meanratiosum/self.numagents
+        self.datacollector.collect(self)
+
 
 
 
