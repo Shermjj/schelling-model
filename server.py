@@ -22,6 +22,7 @@ def agent_portrayal(agent):
     return portrayal
 
 grid = CanvasGrid(agent_portrayal,50,50)
+
 chart1 = ChartModule([
     {"Label":"mean ratio","Color":"Black"}],
     data_collector_name="datacollector"
@@ -36,3 +37,9 @@ param = {"N":UserSettableParameter("slider","Number of Agents",value=500,min_val
 server = ModularServer(SchelModel,[grid,chart1,chart2],"Schelling Model",param)
 
 server.port = 8521
+
+def start():
+    server.launch()
+
+if __name__ == "__main__":
+    start()
