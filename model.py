@@ -104,7 +104,3 @@ class SchelAgent(Agent):
 
 
 
-if __name__ == "__main__":
-    test = SchelModel(70,10,10,0.5)
-    test.step()
-    test.step()
