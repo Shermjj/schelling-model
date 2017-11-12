@@ -63,19 +63,13 @@ class SchelAgent(Agent):
 
     def get_samerace(self):
         mates = self.model.grid.get_neighbors(self.pos,moore=True)
-        samerace = 0
-        for i in mates:
-            if(i.race == self.race):
-                samerace += 1
-        return samerace
+        same_race_list = [x for x in mates if x.race == self.race]
+        return len(same_race_list)
 
     def get_diffrace(self):
         mates = self.model.grid.get_neighbors(self.pos,moore=True)
-        diffrace = 0
-        for i in mates:
-            if(i.race != self.race):
-                diffrace += 1
-        return diffrace
+        diff_race_list = [x for x in mates if x.race != self.race]
+        return len(diff_race_list)
 
     def get_ratio(self):
         numadjsamerace = self.get_samerace()
@@ -110,5 +104,7 @@ class SchelAgent(Agent):
 
 
 
-
-
+if __name__ == "__main__":
+    test = SchelModel(70,10,10,0.5)
+    test.step()
+    test.step()
