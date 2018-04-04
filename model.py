@@ -2,7 +2,9 @@ from mesa import Model,Agent
 from mesa.space import SingleGrid
 from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
+import matplotlib.pyplot as plt
 import random
+import numpy as np
 
 class SchelModel(Model):
     def __init__(self,N,width,height,satisfaction_ratio):
@@ -102,5 +104,6 @@ class SchelAgent(Agent):
             if(self.model.reached_equilibrium == True):
                 self.model.reached_equilibrium = False
 
-
+if(__name__ == "__main__"):
+    test = SchelModel(70,10,10,0.5)
 
