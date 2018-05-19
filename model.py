@@ -25,7 +25,7 @@ class SchelModel(Model):
             x = random.randrange(self.grid.width)
             y = random.randrange(self.grid.height)
             placed = False
-            while(placed != True):
+            while placed != True:
                 try:
                     self.grid.place_agent(a, (x, y))
                     placed = True
@@ -48,7 +48,7 @@ class SchelModel(Model):
         self.lowestratio = 1
         self.reached_equilibrium = True
         self.schedule.step()
-        if(self.reached_equilibrium == True):
+        if self.reached_equilibrium == True:
             self.running = False
         self.meanratio = self.meanratiosum/self.numagents
         self.datacollector.collect(self)
@@ -76,7 +76,7 @@ class SchelAgent(Agent):
     def get_ratio(self):
         numadjsamerace = self.get_samerace()
         numadjdiffrace = self.get_diffrace()
-        if(numadjsamerace + numadjdiffrace > 0):
+        if numadjsamerace + numadjdiffrace > 0:
             ratio = numadjsamerace / (numadjsamerace + numadjdiffrace)
             return ratio
         else:
@@ -86,7 +86,7 @@ class SchelAgent(Agent):
         x = random.randrange(self.model.grid.width)
         y = random.randrange(self.model.grid.height)
         placed = False
-        while (placed != True):
+        while placed != True:
             try:
                 self.model.grid.move_agent(self, (x, y))
                 placed = True
@@ -97,13 +97,14 @@ class SchelAgent(Agent):
     def step(self):
         self.ratio = self.get_ratio()
         self.model.meanratiosum += self.ratio
-        if(self.ratio < self.model.lowestratio):
+        if self.ratio < self.model.lowestratio:
             self.model.lowestratio = self.ratio
-        if(self.ratio < self.model.ratio):
+        if self.ratio < self.model.ratio:
             self.move()
-            if(self.model.reached_equilibrium == True):
+            if self.model.reached_equilibrium == True:
                 self.model.reached_equilibrium = False
 
-if(__name__ == "__main__"):
+
+if __name__ == "__main__":
     test = SchelModel(70,10,10,0.5)
 
