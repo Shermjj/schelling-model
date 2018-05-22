@@ -2,109 +2,121 @@ from mesa import Model,Agent
 from mesa.space import SingleGrid
 from mesa.time import RandomActivation
 from mesa.datacollection import DataCollector
-import matplotlib.pyplot as plt
 import random
-import numpy as np
+
 
 class SchelModel(Model):
-    def __init__(self,N,width,height,satisfaction_ratio):
-        self.numagents = N
+    def __init__(self, density, width, height, satisfaction_ratio=[0.5,0.5], group_count=2, group_pct=[0.5]):
+        """
+
+        :param density:
+        :param width:
+        :param height:
+        :param group_count:
+        :param satisfaction_ratio:
+        :param group_pct:
+        """
+        if group_count < 2:
+            raise ValueError('Group Count cannot be less than 2!')
+        if group_count - 1 != len(group_pct):
+            raise ValueError('Group Percentages and Group Count mismatch! '
+                             'Group percentages should be 1 less than the number of groups')
+        if len(satisfaction_ratio) != group_count:
+            raise ValueError('Satisfaction ratio should be a list with length equivalent to the group count')
+
+
+        self.num_agents = int(density * (width * height))
         self.running = True
         self.grid = SingleGrid(width,height,True)
         self.schedule = RandomActivation(self)
-        self.ratio = satisfaction_ratio
+        self.satisfaction_ratio = satisfaction_ratio
         self.reached_equilibrium = False
+        self.agents = []
+        self.ratio_sum = 0
+        self.lowest_ratio = 1
+        self.mean_ratio = 0
 
-        self.meanratio = 0
-        self.meanratiosum = 0
-        self.lowestratio = 1
+        id_offset = 0
+        for group in range(group_count):
+            # Final count (Percentage isn't explicit, have to calculate)
+            if group == group_count - 1:
+                pct = 1 - sum(group_pct)
+                for i in range(id_offset,id_offset + int(pct * self.num_agents)):
+                    a = SchelAgent(i , self, group)
+                    self.agents.append(a)
+                    id_offset += 1
+                    self.schedule.add(a)
+                    self.grid.place_agent(a, self.grid.find_empty())
+            else:
+                for i in range(id_offset,id_offset + int(group_pct[group] * self.num_agents)):
+                    a = SchelAgent(i, self, group)
+                    self.agents.append(a)
+                    id_offset += 1
+                    self.schedule.add(a)
+                    self.grid.place_agent(a, self.grid.find_empty())
 
-        for i in range(N):
-            a = SchelAgent(i,self,random.randrange(1,3))
-            self.schedule.add(a)
-            x = random.randrange(self.grid.width)
-            y = random.randrange(self.grid.height)
-            placed = False
-            while placed != True:
-                try:
-                    self.grid.place_agent(a, (x, y))
-                    placed = True
-                except Exception:
-                    x = random.randrange(self.grid.width)
-                    y = random.randrange(self.grid.height)
-
-        self.datacollector = DataCollector(
-            model_reporters={"mean ratio": lambda a: a.meanratio,
-                            "lowest ratio": lambda a: a.lowestratio},
-            agent_reporters={"coordinates":lambda j:j.pos,
-                             "race":lambda j:j.race}
+        self.data_collector = DataCollector(
+            model_reporters={"mean ratio value": lambda model: model.mean_ratio,
+                             "lowest ratio value": lambda model: model.lowest_ratio},
+            agent_reporters={"coordinates": lambda agent: agent.pos,
+                             "group": lambda agent : agent.group,
+                             "satisfaction": lambda agent: agent.satisfied,
+                             "agent ratio value": lambda agent: agent.ratio}
         )
-        self.datacollector.collect(self)
-
+        self.data_collector.collect(self)
 
     def step(self):
-        self.meanratiosum = 0
-        self.meanratio = 0
-        self.lowestratio = 1
+        self.ratio_sum = 0
+        self.lowest_ratio = 1
         self.reached_equilibrium = True
         self.schedule.step()
-        if self.reached_equilibrium == True:
-            self.running = False
-        self.meanratio = self.meanratiosum/self.numagents
-        self.datacollector.collect(self)
-
-
-
-
+        # Stops model if model reached equilibrium
+        self.running = False if self.reached_equilibrium is True else True
+        self.mean_ratio = self.ratio_sum / self.num_agents
+        self.data_collector.collect(self)
 
 class SchelAgent(Agent):
-    def __init__(self,unique_id,model,race):
+    def __init__(self, unique_id, model, group):
+        """
+
+        :param unique_id:
+        :param model:
+        :param group:
+        """
         super().__init__(unique_id,model)
-        self.ratio = -1
-        self.race = race
+        self.ratio = 0
+        self.group = group
+        self.satisfied = False
 
-    def get_samerace(self):
-        mates = self.model.grid.get_neighbors(self.pos,moore=True)
-        same_race_list = [x for x in mates if x.race == self.race]
-        return len(same_race_list)
+    def calculate_ratio(self):
+        same_group_neighbors = len([neighbor for neighbor in self.model.grid.get_neighbors(self.pos,moore=True)
+                                    if self.group == neighbor.group])
+        diff_group_neighbors = len([neighbor for neighbor in self.model.grid.get_neighbors(self.pos,moore=True)
+                                    if self.group != neighbor.group])
 
-    def get_diffrace(self):
-        mates = self.model.grid.get_neighbors(self.pos,moore=True)
-        diff_race_list = [x for x in mates if x.race != self.race]
-        return len(diff_race_list)
-
-    def get_ratio(self):
-        numadjsamerace = self.get_samerace()
-        numadjdiffrace = self.get_diffrace()
-        if numadjsamerace + numadjdiffrace > 0:
-            ratio = numadjsamerace / (numadjsamerace + numadjdiffrace)
+        if same_group_neighbors + diff_group_neighbors > 0:
+            ratio = same_group_neighbors / (same_group_neighbors + diff_group_neighbors)
             return ratio
         else:
-            return -1
-
-    def move(self):
-        x = random.randrange(self.model.grid.width)
-        y = random.randrange(self.model.grid.height)
-        placed = False
-        while placed != True:
-            try:
-                self.model.grid.move_agent(self, (x, y))
-                placed = True
-            except Exception:
-                x = random.randrange(self.model.grid.width)
-                y = random.randrange(self.model.grid.height)
+            # No neighbors
+            return 0
 
     def step(self):
-        self.ratio = self.get_ratio()
-        self.model.meanratiosum += self.ratio
-        if self.ratio < self.model.lowestratio:
-            self.model.lowestratio = self.ratio
-        if self.ratio < self.model.ratio:
-            self.move()
-            if self.model.reached_equilibrium == True:
-                self.model.reached_equilibrium = False
+        self.ratio = self.calculate_ratio()
+        self.model.ratio_sum += self.ratio
+
+        if self.ratio < self.model.lowest_ratio:
+            self.model.lowest_ratio = self.ratio
+
+        if self.ratio < self.model.satisfaction_ratio[self.group]:
+            self.model.grid.move_to_empty(self)
+            self.model.reached_equilibrium = False
+        else:
+            self.satisfied = True
 
 
 if __name__ == "__main__":
-    test = SchelModel(70,10,10,0.5)
+    test = SchelModel(0.8,10,10,satisfaction_ratio=[0.5,0.5,0.3],group_count=3,group_pct=[0.3,0.24])
+
+
 

@@ -10,31 +10,40 @@ def agent_portrayal(agent):
                  "Filled": "true",
                  "Layer": 0,
                  "r": 0.5,
-                 #"text":str(agent.unique_id),
+                 "text":str(agent.unique_id)
                  #"text_color":"yellow"
                  }
-    if(agent.race == 1):
+    if(agent.group == 0):
         portrayal["Color"] = "red"
-    elif(agent.race == 2):
+    elif(agent.group == 1):
         portrayal["Color"] = "blue"
-
+    elif(agent.group ==2):
+        portrayal['Color'] = "grey"
 
     return portrayal
 
-grid = CanvasGrid(agent_portrayal,50,50)
+grid = CanvasGrid(agent_portrayal,30,30)
 
 chart1 = ChartModule([
-    {"Label":"mean ratio","Color":"Black"}],
-    data_collector_name="datacollector"
+    {"Label":"mean calculate_ratio","Color":"Black"}],
+    data_collector_name="data_collector"
 )
 chart2 = ChartModule([
-    {"Label":"lowest ratio","Color":"Black"}],
-    data_collector_name="datacollector"
+    {"Label":"lowest calculate_ratio","Color":"Black"}],
+    data_collector_name="data_collector"
 )
-param = {"N":UserSettableParameter("slider","Number of Agents",value=500,min_value=2,max_value=2500,step=100),"width":50,"height":50,
-         "satisfaction_ratio":UserSettableParameter("slider","Satisfaction ratio",value=0.5,min_value=0,max_value=1,step=0.1)}
 
-server = ModularServer(SchelModel,[grid,chart1,chart2],"Schelling Model",param)
+param = {}
+param = {"density":UserSettableParameter('number','density value',value=0.5),
+         "width":30,"height":30,
+         "satisfaction_ratio":UserSettableParameter('choice','satisfaction ratio',value=[0.5,0.5],
+                                                    choices=[[0.5,0.5],[0.5,0.5,0.5]]),
+         'group_count':UserSettableParameter('choice','group count',value=2,
+                                             choices=[2,3]),
+         'group_pct':UserSettableParameter('choice','group pct',value=[0.5],
+                                           choices=[[0.5],[0.3,0.2]])}
+
+server = ModularServer(SchelModel,[grid],"Schelling Model",param)
 
 server.port = 8521
 
